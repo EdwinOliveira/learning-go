@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
-
 
 type Todo struct {
 	id uint32
@@ -16,17 +16,11 @@ type Todo struct {
 	isActive bool
 }
 
-type TodoRepository interface {
-	findTodoById(id uint32) (Todo, error)
-	createTodo(name, description string) int16
-	updateTodoById(id uint32, name, description string, isCompleted, isActive bool) (int16, error)
-}
-
 var todos = []Todo{}
 
-func (t Todo) findTodoById(id uint32) (Todo, error) {
+func (t Todo) findTodoById() (Todo, error) {
 	for _, todo := range todos {
-		if todo.id == id {
+		if todo.id == t.id {
 			return todo, nil
 		}
 	}
@@ -34,11 +28,11 @@ func (t Todo) findTodoById(id uint32) (Todo, error) {
 	return Todo{}, fmt.Errorf("No Todo found with that ID!")
 }
 
-func (t Todo) createTodo(name, description string) int16 {
+func (t Todo) createTodo() int16 {
 	todos = append(todos, Todo{ 
 		id: uint32(len(todos) + 1), 
-		name: name, 
-		description: description, 
+		name: t.name, 
+		description: t.description, 
 		isCompleted: false, 
 		isActive: true,
 	})
@@ -46,11 +40,11 @@ func (t Todo) createTodo(name, description string) int16 {
 	return 1
 }
 
-func (t Todo) updateTodoById(id uint32, name, description string, isCompleted, isActive bool) (int16, error) {
+func (t Todo) updateTodoById() (int16, error) {
 	todoIndex := -1
 
 	for i, todo := range todos {
-		if todo.id == id {
+		if todo.id == t.id {
 			todoIndex = i 
 		}
 	}
@@ -59,20 +53,20 @@ func (t Todo) updateTodoById(id uint32, name, description string, isCompleted, i
 		return -1, fmt.Errorf("No Todo found with that ID!")
 	}
  
-	if name != "" && name != todos[todoIndex].name {
-		todos[todoIndex].name = name
+	if t.name != "" && t.name != todos[todoIndex].name {
+		todos[todoIndex].name = t.name
 	}
 
-	if description != "" && description != todos[todoIndex].description {
-		todos[todoIndex].description = description
+	if t.description != "" && t.description != todos[todoIndex].description {
+		todos[todoIndex].description = t.description
 	}
 
-	if isCompleted != todos[todoIndex].isCompleted {
-		todos[todoIndex].isCompleted = isCompleted
+	if t.isCompleted != todos[todoIndex].isCompleted {
+		todos[todoIndex].isCompleted = t.isCompleted
 	}
 
-	if isActive != todos[todoIndex].isActive {
-		todos[todoIndex].isActive = isActive
+	if t.isActive != todos[todoIndex].isActive {
+		todos[todoIndex].isActive = t.isActive
 	}
 
 	return 1, nil
@@ -93,18 +87,112 @@ func main() {
 
 		switch(trimmedAction) {
 			case "1": {
+				fmt.Println("Todo ID?")
+				todoId, _ := reader.ReadString('\n')
+				trimmedTodoId := strings.TrimSpace(todoId)
+				parsedTodoId, parsedTodoIdError := strconv.Atoi(strings.TrimSpace(trimmedTodoId))
+
+				if parsedTodoIdError != nil {
+					fmt.Println("Error converting string to integer:", parsedTodoIdError)
+					return
+				}
+
+				foundTodo, foundTodoError := Todo.findTodoById(Todo{id: uint32(parsedTodoId)})
+
+				if foundTodoError != nil {
+					fmt.Println("Error finding the todo:", foundTodoError)
+					return
+				}
+
+				fmt.Println(foundTodo)
 				break
 			}
 			case "2": {
+				fmt.Println("Todo Name?")
+				todoName, _ := reader.ReadString('\n')
+				trimmedTodoName := strings.TrimSpace(todoName)
+
+				fmt.Println("Todo Description?")
+				todoDescription, _ := reader.ReadString('\n')
+				trimmedTodoDescription := strings.TrimSpace(todoDescription)
+
+				createdTodoResponse := Todo.createTodo(Todo{ name: trimmedTodoName, description: trimmedTodoDescription })
+
+				if createdTodoResponse == 1 {
+					fmt.Println("Todo created with success")
+				}
+
 				break
 			}
 			case "3": {
+				fmt.Println("Todo ID?")
+				todoId, _ := reader.ReadString('\n')
+				trimmedTodoId := strings.TrimSpace(todoId)
+				parsedTodoId, parsedTodoIdError := strconv.Atoi(strings.TrimSpace(trimmedTodoId))
+
+				if parsedTodoIdError != nil {
+					fmt.Println("Error converting string to integer:", parsedTodoIdError)
+					return
+				}
+
+				fmt.Println("Todo Name?")
+				todoName, _ := reader.ReadString('\n')
+				trimmedTodoName := strings.TrimSpace(todoName)
+
+				fmt.Println("Todo Description?")
+				todoDescription, _ := reader.ReadString('\n')
+				trimmedTodoDescription := strings.TrimSpace(todoDescription)
+
+				_, updatedTodoResponseError := Todo.updateTodoById(Todo{ id: uint32(parsedTodoId), name: trimmedTodoName, description: trimmedTodoDescription })
+
+				if updatedTodoResponseError != nil {
+					fmt.Println(updatedTodoResponseError)
+					return
+				}
+
+				fmt.Println("Todo updated with sucess!")
 				break
 			}
 			case "4": {
+				fmt.Println("Todo ID?")
+				todoId, _ := reader.ReadString('\n')
+				trimmedTodoId := strings.TrimSpace(todoId)
+				parsedTodoId, parsedTodoIdError := strconv.Atoi(strings.TrimSpace(trimmedTodoId))
+
+				if parsedTodoIdError != nil {
+					fmt.Println("Error converting string to integer:", parsedTodoIdError)
+					return
+				}
+
+				_, updatedTodoResponseError := Todo.updateTodoById(Todo{ id: uint32(parsedTodoId), isCompleted: true })
+
+				if updatedTodoResponseError != nil {
+					fmt.Println(updatedTodoResponseError)
+					return
+				}
+
+				fmt.Println("Todo updated with sucess!")
 				break
 			}
 			case "5": {
+				fmt.Println("Todo ID?")
+				todoId, _ := reader.ReadString('\n')
+				trimmedTodoId := strings.TrimSpace(todoId)
+				parsedTodoId, parsedTodoIdError := strconv.Atoi(strings.TrimSpace(trimmedTodoId))
+
+				if parsedTodoIdError != nil {
+					fmt.Println("Error converting string to integer:", parsedTodoIdError)
+					return
+				}
+
+				_, updatedTodoResponseError := Todo.updateTodoById(Todo{ id: uint32(parsedTodoId), isActive: false })
+
+				if updatedTodoResponseError != nil {
+					fmt.Println(updatedTodoResponseError)
+					return
+				}
+
+				fmt.Println("Todo updated with sucess!")
 				break
 			}
 		}
